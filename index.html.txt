@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Fortune Wheel</title>
+  <style>
+    :root{
+      --bg1:#7b2cf6;
+      --bg2:#5a17d6;
+      --panel:#5b1fd8;
+      --gold:#f3c33a;
+      --gold2:#e1aa15;
+      --cream:#f6e3b6;
+      --red:#c3121a;
+      --black:#1a1a1a;
+      --text:#ffffff;
+      --muted:rgba(255,255,255,.85);
+      --shadow: 0 16px 50px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Kufi Arabic", "Noto Sans Arabic", sans-serif;
+      min-height:100vh;
+      background: linear-gradient(180deg, var(--bg1), var(--bg2));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:var(--text);
+      padding:24px;
+    }
+
+    .wrap{
+      width:min(430px, 100%);
+      text-align:center;
+    }
+
+    .card{
+      background: radial-gradient(120% 120% at 50% 0%, #8e4dff 0%, var(--panel) 55%, #4711b7 100%);
+      border-radius:28px;
+      padding:22px 18px 18px;
+      box-shadow: var(--shadow);
+      position:relative;
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,.12);
+    }
+
+    .title{
+      font-weight:900;
+      letter-spacing:.5px;
+      margin:6px 0 2px;
+      font-size:34px;
+      line-height:1.05;
+      text-transform:uppercase;
+    }
+
+    .subtitle{
+      margin:0 0 14px;
+      color:var(--muted);
+      font-size:14px;
+    }
+
+    .wheel-area{
+      margin: 8px auto 14px;
+      position:relative;
+      width: min(340px, 100%);
+      aspect-ratio: 1 / 1;
+      display:grid;
+      place-items:center;
+    }
+
+    /* Outer rim glow */
+    .rim{
+      position:absolute; inset:0;
+      border-radius:50%;
+      background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.08) 0 52%, rgba(0,0,0,.0) 53%),
+                  radial-gradient(circle at 50% 50%, rgba(0,0,0,.22) 0 65%, rgba(0,0,0,0) 66%);
+      pointer-events:none;
+      filter: drop-shadow(0 20px 30px rgba(0,0,0,.35));
+    }
+
+    canvas{
+      width:100%;
+      height:100%;
+      border-radius:50%;
+    }
+
+    /* pointer */
+    .pointer{
+      position:absolute;
+      top:-8px;
+      left:50%;
+      transform:translateX(-50%);
+      width:0;height:0;
+      border-left:16px solid transparent;
+      border-right:16px solid transparent;
+      border-bottom:36px solid var(--gold);
+      filter: drop-shadow(0 10px 10px rgba(0,0,0,.35));
+    }
+    .pointer:after{
+      content:"";
+      position:absolute;
+      left:50%;
+      transform:translateX(-50%);
+      top:28px;
+      width:18px;height:18px;
+      background: #2b2b2b;
+      border-radius:50%;
+      border: 3px solid rgba(255,255,255,.25);
+      box-shadow: 0 8px 16px rgba(0,0,0,.35);
+    }
+
+    /* center hub */
+    .hub{
+      position:absolute;
+      width:72px;height:72px;
+      border-radius:50%;
+      background: radial-gradient(circle at 30% 25%, #3a3a3a, #111 70%);
+      border: 4px solid rgba(243,195,58,.75);
+      box-shadow: 0 16px 26px rgba(0,0,0,.35);
+      pointer-events:none;
+    }
+
+    .btn{
+      width: min(280px, 100%);
+      background: linear-gradient(180deg, var(--gold), var(--gold2));
+      border:none;
+      color:#ffffff;
+      font-weight:900;
+      padding:14px 18px;
+      border-radius:12px;
+      cursor:pointer;
+      font-size:16px;
+      box-shadow: 0 14px 26px rgba(0,0,0,.35);
+      transition: transform .06s ease;
+      text-transform:uppercase;
+    }
+    .btn:active{ transform: translateY(1px) scale(.995); }
+    .btn[disabled]{ opacity:.6; cursor:not-allowed; }
+
+    .foot{
+      margin-top:12px;
+      font-size:12px;
+      color: rgba(255,255,255,.78);
+      line-height:1.4;
+    }
+
+    /* modal */
+    .modal-backdrop{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      z-index:999;
+    }
+    .modal{
+      width:min(420px, 100%);
+      background: #15151a;
+      border-radius:18px;
+      padding:18px;
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow: 0 24px 60px rgba(0,0,0,.5);
+      text-align:right;
+    }
+    .modal h3{
+      margin:0 0 10px;
+      font-size:18px;
+    }
+    .modal p{
+      margin:0 0 14px;
+      color: rgba(255,255,255,.86);
+      font-size:14px;
+      line-height:1.55;
+    }
+    .modal .row{
+      display:flex; gap:10px; flex-wrap:wrap;
+      justify-content:flex-start;
+    }
+    .ghost{
+      background: transparent;
+      border: 1px solid rgba(255,255,255,.18);
+      color: #fff;
+      padding:12px 14px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:800;
+      flex: 1 1 140px;
+    }
+    .cta{
+      background: linear-gradient(180deg, var(--gold), var(--gold2));
+      border:none;
+      color:#fff;
+      padding:12px 14px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:900;
+      flex: 1 1 160px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="title">FORTUNE<br>WHEEL</div>
+      <p class="subtitle">لف العجلة وشوف هديتك 👇 (النتيجة عشوائية)</p>
+
+      <div class="wheel-area">
+        <div class="pointer" aria-hidden="true"></div>
+        <div class="rim" aria-hidden="true"></div>
+        <canvas id="wheel" width="800" height="800" aria-label="Fortune Wheel"></canvas>
+        <div class="hub" aria-hidden="true"></div>
+      </div>
+
+      <button id="spinBtn" class="btn">GET STARTED</button>
+
+      <div class="foot">
+        هذا العرض ترفيهي/سحب — النتائج قد تختلف ولا توجد ضمانات للربح.  
+      </div>
+    </div>
+  </div>
+
+  <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal">
+      <h3 id="modalTitle">مبروك! 🎉</h3>
+      <p id="modalText"></p>
+      <div class="row">
+        <button class="ghost" id="closeModal">إغلاق</button>
+        <button class="cta" id="goCpa">متابعة</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ضع رابط CPA هنا:
+    const CPA_URL = "https://adsmain.bountyads.store/?utm_medium=24c9e8ead1a61abc4ca11515604da84dbebe69ba&utm_campaign=spent";
+
+    // الجوائز (تقدر تعدل/تضيف)
+    const prizes = [
+      { label: "iPhone", weight: 3 },
+      { label: "Samsung", weight: 4 },
+      { label: "AirPods", weight: 5 },
+      { label: "Gift Card", weight: 8 },
+      { label: "Gift Card", weight: 8 },
+      { label: "هديّة مفاجأة", weight: 10 },
+      { label: "حظ أوفر", weight: 40 },
+      { label: "حظ أوفر", weight: 40 },
+      { label: "حظ أوفر", weight: 40 },
+      { label: "هديّة مفاجأة", weight: 10 },
+      { label: "Gift Card", weight: 8 },
+      { label: "AirPods", weight: 5 }
+    ];
+
+    // ألوان الشرائح (أحمر/كريمي مثل الصورة)
+    const sliceColors = prizes.map((_, i) => (i % 2 === 0 ? getComputedStyle(document.documentElement).getPropertyValue('--red').trim()
+                                                     : getComputedStyle(document.documentElement).getPropertyValue('--cream').trim()));
+
+    const canvas = document.getElementById("wheel");
+    const ctx = canvas.getContext("2d");
+    const spinBtn = document.getElementById("spinBtn");
+
+    const modalBackdrop = document.getElementById("modalBackdrop");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalText = document.getElementById("modalText");
+    const closeModal = document.getElementById("closeModal");
+    const goCpa = document.getElementById("goCpa");
+
+    const W = canvas.width, H = canvas.height;
+    const cx = W/2, cy = H/2;
+    const radius = Math.min(W,H)*0.44;
+
+    let currentAngle = -Math.PI/2; // start so pointer is at top
+    let spinning = false;
+
+    function weightedPick(items){
+      const total = items.reduce((s,x)=>s + (x.weight||1), 0);
+      let r = Math.random() * total;
+      for (const it of items){
+        r -= (it.weight||1);
+        if (r <= 0) return it;
+      }
+      return items[items.length - 1];
+    }
+
+    function drawWheel(angle){
+      ctx.clearRect(0,0,W,H);
+
+      // outer ring (lights-ish)
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(angle);
+
+      const n = prizes.length;
+      const step = (Math.PI*2)/n;
+
+      for(let i=0;i<n;i++){
+        const start = i*step;
+        const end = start + step;
+
+        // slice
+        ctx.beginPath();
+        ctx.moveTo(0,0);
+        ctx.arc(0,0,radius,start,end);
+        ctx.closePath();
+        ctx.fillStyle = sliceColors[i];
+        ctx.fill();
+
+        // slice border
+        ctx.strokeStyle = "rgba(0,0,0,.22)";
+        ctx.lineWidth = 6;
+        ctx.stroke();
+
+        // text
+        ctx.save();
+        ctx.rotate(start + step/2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = (sliceColors[i].toLowerCase() === "#c3121a") ? "#fff" : "#7a0e13";
+        ctx.font = "900 34px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+        ctx.shadowColor = "rgba(0,0,0,.25)";
+        ctx.shadowBlur = 6;
+        ctx.fillText(prizes[i].label, radius - 26, 12);
+        ctx.restore();
+      }
+
+      // inner ring
+      ctx.beginPath();
+      ctx.arc(0,0,radius+10,0,Math.PI*2);
+      ctx.strokeStyle = "rgba(0,0,0,.35)";
+      ctx.lineWidth = 18;
+      ctx.stroke();
+
+      // gold rim
+      ctx.beginPath();
+      ctx.arc(0,0,radius+2,0,Math.PI*2);
+      ctx.strokeStyle = "rgba(243,195,58,.85)";
+      ctx.lineWidth = 8;
+      ctx.stroke();
+
+      // dots around rim
+      const dots = 28;
+      for(let d=0; d<dots; d++){
+        const a = (Math.PI*2) * (d/dots);
+        const x = Math.cos(a) * (radius+18);
+        const y = Math.sin(a) * (radius+18);
+        ctx.beginPath();
+        ctx.arc(x,y,7,0,Math.PI*2);
+        ctx.fillStyle = "rgba(255,255,255,.85)";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(0,0,0,.25)";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    function angleToIndex(globalAngle){
+      // pointer at top (=-PI/2 in our base). Convert to slice index
+      const n = prizes.length;
+      const step = (Math.PI*2)/n;
+
+      // globalAngle is wheel rotation (currentAngle). We want which slice is under pointer.
+      // When wheel rotates clockwise (angle increases), slice positions shift.
+      // Compute normalized angle for pointer reference.
+      const a = ( (Math.PI*2) - (globalAngle % (Math.PI*2)) + (Math.PI/2) ) % (Math.PI*2);
+      const idx = Math.floor(a / step) % n;
+      return idx;
+    }
+
+    function showResult(prizeLabel){
+      modalTitle.textContent = prizeLabel === "حظ أوفر" ? "حظ أوفر 🙂" : "مبروك! 🎉";
+      if (prizeLabel === "حظ أوفر") {
+        modalText.textContent = "للأسف ما صار نصيبك هالمرة. تقدر تضغط متابعة وتشوف العرض المتاح.";
+      } else {
+        modalText.textContent =
+          `مبروك! ربحت: ${prizeLabel}\n\nإذا تحب، اضغط "متابعة" للانتقال للعرض المتاح.`;
+      }
+      modalBackdrop.style.display = "flex";
+    }
+
+    closeModal.addEventListener("click", ()=> modalBackdrop.style.display = "none");
+    modalBackdrop.addEventListener("click", (e)=> { if(e.target === modalBackdrop) modalBackdrop.style.display="none"; });
+
+    goCpa.addEventListener("click", ()=>{
+      // فتح في نفس التبويب لتقليل مشاكل iOS + تتبع أفضل
+      window.location.href = CPA_URL;
+    });
+
+    // initial draw
+    drawWheel(currentAngle);
+
+    spinBtn.addEventListener("click", ()=>{
+      if (spinning) return;
+
+      spinning = true;
+      spinBtn.disabled = true;
+
+      // اختيار النتيجة عشوائي حقيقي (وزني)
+      const picked = weightedPick(prizes);
+      const targetIndex = prizes.findIndex(p => p.label === picked.label && p.weight === picked.weight);
+      // لو نفس اللابل موجود أكتر من مرة، نختار أقرب واحدة عشوائياً
+      const allSame = prizes.map((p,i)=>({p,i})).filter(x=>x.p.label===picked.label);
+      const chosenIndex = allSame[Math.floor(Math.random()*allSame.length)].i;
+
+      const n = prizes.length;
+      const step = (Math.PI*2)/n;
+
+      // نحدد زاوية النهاية بحيث مؤشر الأعلى يقع على الشريحة المختارة
+      // نحتاج نحسب زاوية تجعل index عند المؤشر = chosenIndex
+      // reverse of angleToIndex تقريبياً:
+      // a in [idx*step, (idx+1)*step) so pick middle
+      const targetA = (chosenIndex + 0.5) * step; // within 0..2pi
+      // We want: a = ((2pi - (angle mod 2pi) + pi/2) mod 2pi)
+      // Solve for angle: angle ≡ (2pi + pi/2 - a) (mod 2pi)
+      let endAngleBase = (Math.PI*2 + Math.PI/2 - targetA) % (Math.PI*2);
+
+      // add multiple spins for animation
+      const spins = 7 + Math.random()*2; // 7-9 spins
+      const endAngle = endAngleBase + spins*(Math.PI*2);
+
+      const startAngle = currentAngle;
+      const duration = 3800; // ms
+      const start = performance.now();
+
+      function easeOutCubic(t){ return 1 - Math.pow(1-t, 3); }
+
+      function anim(now){
+        const t = Math.min(1, (now - start)/duration);
+        const e = easeOutCubic(t);
+        currentAngle = startAngle + (endAngle - startAngle) * e;
+        drawWheel(currentAngle);
+
+        if (t < 1){
+          requestAnimationFrame(anim);
+        } else {
+          spinning = false;
+          spinBtn.disabled = false;
+
+          // determine winner based on final angle
+          const idx = angleToIndex(currentAngle);
+          const prize = prizes[idx];
+          showResult(prize.label);
+        }
+      }
+      requestAnimationFrame(anim);
+    });
+  </script>
+</body>
+</html>
