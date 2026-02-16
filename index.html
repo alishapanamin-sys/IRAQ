@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Fortune Wheel - Iraq</title>
+  <title>Fortune Wheel</title>
   <style>
     :root{
       --bg1:#7b2cf6;
@@ -171,28 +171,10 @@
       font-weight:900;
       flex: 1 1 160px;
     }
-
-    /* Iraq gate */
-    .gate{
-      display:none;
-      background: rgba(0,0,0,.18);
-      border: 1px solid rgba(255,255,255,.14);
-      border-radius:18px;
-      padding:18px;
-      text-align:right;
-      box-shadow: var(--shadow);
-    }
-    .gate h2{ margin:0 0 8px; font-size:18px; }
-    .gate p{ margin:0; color: rgba(255,255,255,.86); line-height:1.55; }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div id="gate" class="gate">
-      <h2>تنبيه</h2>
-      <p>هذا العرض متاح داخل العراق فقط.</p>
-    </div>
-
     <div id="app" class="card">
       <div class="title">FORTUNE<br>WHEEL</div>
       <p class="subtitle">لف العجلة وشوف هديتك 👇</p>
@@ -227,27 +209,7 @@
     // ====== رابط CPA ======
     const CPA_URL = "https://adsmain.bountyads.store/?utm_medium=24c9e8ead1a61abc4ca11515604da84dbebe69ba&utm_campaign=spent";
 
-    // ====== تقييد العراق (Client-side) ======
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
-    const lang = (navigator.language || "").toLowerCase();
-    const langs = (navigator.languages || []).map(x => (x||"").toLowerCase());
-
-    const isIraq =
-      tz.includes("Baghdad") ||
-      lang.includes("iq") ||
-      langs.some(l => l.includes("iq"));
-
-    const gateEl = document.getElementById("gate");
-    const appEl = document.getElementById("app");
-
-    if (!isIraq) {
-      appEl.style.display = "none";
-      gateEl.style.display = "block";
-      throw new Error("Offer restricted to Iraq only.");
-    }
-
-    // ====== صور الهدايا (SVG كصور) ======
-    // تقدر تعتبرها “صور” لأنها بتترسم داخل Canvas كـ Image.
+    // ====== صور الهدايا (SVG كصور مدمجة) ======
     const ICONS = {
       iphone: svgData(`
         <svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" viewBox="0 0 220 220">
@@ -350,7 +312,6 @@
     }
 
     // ====== شرائح العجلة (صور فقط) ======
-    // تقدر تزود/تنقص الشرائح براحتك
     const prizes = [
       { key:"iphone",   type:"win",  weight: 3 },
       { key:"samsung",  type:"win",  weight: 4 },
@@ -449,8 +410,8 @@
           ctx.save();
           ctx.rotate(mid);
 
-          const size = 120;     // حجم الأيقونة
-          const dist = radius - 62; // مكانها داخل الشريحة
+          const size = 120;
+          const dist = radius - 62;
           const x = dist - size;
           const y = -size/2;
 
@@ -517,9 +478,7 @@
     goCpa.addEventListener("click", ()=> { window.location.href = CPA_URL; });
 
     // init
-    preloadAll().then(()=>{
-      drawWheel(currentAngle);
-    });
+    preloadAll().then(()=> drawWheel(currentAngle));
 
     spinBtn.addEventListener("click", ()=>{
       if (spinning) return;
@@ -527,8 +486,6 @@
       spinBtn.disabled = true;
 
       const picked = weightedPick(prizes);
-
-      // لو نفس الأيقونة موجودة أكثر من مرة، اختار واحدة عشوائي
       const candidates = prizes.map((p,i)=>({p,i})).filter(x=>x.p.key===picked.key && x.p.type===picked.type);
       const chosenIndex = candidates[Math.floor(Math.random()*candidates.length)].i;
 
@@ -536,16 +493,16 @@
       const step = (Math.PI*2)/n;
 
       const targetA = (chosenIndex + 0.5) * step;
-      let endAngleBase = (Math.PI*2 + Math.PI/2 - targetA) % (Math.PI*2);
+      const endAngleBase = (Math.PI*2 + Math.PI/2 - targetA) % (Math.PI*2);
 
-      const spins = 7 + Math.random()*2; // 7-9 لفات
+      const spins = 7 + Math.random()*2;
       const endAngle = endAngleBase + spins*(Math.PI*2);
 
       const startAngle = currentAngle;
       const duration = 3800;
       const start = performance.now();
 
-      function easeOutCubic(t){ return 1 - Math.pow(1-t, 3); }
+      const easeOutCubic = (t)=> 1 - Math.pow(1-t, 3);
 
       function anim(now){
         const t = Math.min(1, (now - start)/duration);
@@ -553,9 +510,8 @@
         currentAngle = startAngle + (endAngle - startAngle) * e;
         drawWheel(currentAngle);
 
-        if (t < 1){
-          requestAnimationFrame(anim);
-        } else {
+        if (t < 1) requestAnimationFrame(anim);
+        else {
           spinning = false;
           spinBtn.disabled = false;
           const idx = angleToIndex(currentAngle);
