@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Fortune Wheel</title>
+  <title>Fortune Wheel - Iraq</title>
   <style>
     :root{
       --bg1:#7b2cf6;
@@ -13,7 +13,6 @@
       --gold2:#e1aa15;
       --cream:#f6e3b6;
       --red:#c3121a;
-      --black:#1a1a1a;
       --text:#ffffff;
       --muted:rgba(255,255,255,.85);
       --shadow: 0 16px 50px rgba(0,0,0,.35);
@@ -30,12 +29,7 @@
       color:var(--text);
       padding:24px;
     }
-
-    .wrap{
-      width:min(430px, 100%);
-      text-align:center;
-    }
-
+    .wrap{ width:min(430px, 100%); text-align:center; }
     .card{
       background: radial-gradient(120% 120% at 50% 0%, #8e4dff 0%, var(--panel) 55%, #4711b7 100%);
       border-radius:28px;
@@ -45,7 +39,6 @@
       overflow:hidden;
       border: 1px solid rgba(255,255,255,.12);
     }
-
     .title{
       font-weight:900;
       letter-spacing:.5px;
@@ -54,12 +47,7 @@
       line-height:1.05;
       text-transform:uppercase;
     }
-
-    .subtitle{
-      margin:0 0 14px;
-      color:var(--muted);
-      font-size:14px;
-    }
+    .subtitle{ margin:0 0 14px; color:var(--muted); font-size:14px; }
 
     .wheel-area{
       margin: 8px auto 14px;
@@ -69,8 +57,6 @@
       display:grid;
       place-items:center;
     }
-
-    /* Outer rim glow */
     .rim{
       position:absolute; inset:0;
       border-radius:50%;
@@ -79,14 +65,7 @@
       pointer-events:none;
       filter: drop-shadow(0 20px 30px rgba(0,0,0,.35));
     }
-
-    canvas{
-      width:100%;
-      height:100%;
-      border-radius:50%;
-    }
-
-    /* pointer */
+    canvas{ width:100%; height:100%; border-radius:50%; }
     .pointer{
       position:absolute;
       top:-8px;
@@ -110,8 +89,6 @@
       border: 3px solid rgba(255,255,255,.25);
       box-shadow: 0 8px 16px rgba(0,0,0,.35);
     }
-
-    /* center hub */
     .hub{
       position:absolute;
       width:72px;height:72px;
@@ -165,20 +142,15 @@
       box-shadow: 0 24px 60px rgba(0,0,0,.5);
       text-align:right;
     }
-    .modal h3{
-      margin:0 0 10px;
-      font-size:18px;
-    }
+    .modal h3{ margin:0 0 10px; font-size:18px; }
     .modal p{
       margin:0 0 14px;
       color: rgba(255,255,255,.86);
       font-size:14px;
       line-height:1.55;
+      white-space:pre-line;
     }
-    .modal .row{
-      display:flex; gap:10px; flex-wrap:wrap;
-      justify-content:flex-start;
-    }
+    .modal .row{ display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-start; }
     .ghost{
       background: transparent;
       border: 1px solid rgba(255,255,255,.18);
@@ -199,13 +171,31 @@
       font-weight:900;
       flex: 1 1 160px;
     }
+
+    /* Iraq gate */
+    .gate{
+      display:none;
+      background: rgba(0,0,0,.18);
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius:18px;
+      padding:18px;
+      text-align:right;
+      box-shadow: var(--shadow);
+    }
+    .gate h2{ margin:0 0 8px; font-size:18px; }
+    .gate p{ margin:0; color: rgba(255,255,255,.86); line-height:1.55; }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="card">
+    <div id="gate" class="gate">
+      <h2>تنبيه</h2>
+      <p>هذا العرض متاح داخل العراق فقط.</p>
+    </div>
+
+    <div id="app" class="card">
       <div class="title">FORTUNE<br>WHEEL</div>
-      <p class="subtitle">لف العجلة وشوف هديتك 👇 (النتيجة عشوائية)</p>
+      <p class="subtitle">لف العجلة وشوف هديتك 👇</p>
 
       <div class="wheel-area">
         <div class="pointer" aria-hidden="true"></div>
@@ -217,7 +207,7 @@
       <button id="spinBtn" class="btn">GET STARTED</button>
 
       <div class="foot">
-        هذا العرض ترفيهي/سحب — النتائج قد تختلف ولا توجد ضمانات للربح.  
+        هذا سحب/تجربة — النتائج عشوائية وقد تختلف.
       </div>
     </div>
   </div>
@@ -234,28 +224,169 @@
   </div>
 
   <script>
-    // ضع رابط CPA هنا:
+    // ====== رابط CPA ======
     const CPA_URL = "https://adsmain.bountyads.store/?utm_medium=24c9e8ead1a61abc4ca11515604da84dbebe69ba&utm_campaign=spent";
 
-    // الجوائز (تقدر تعدل/تضيف)
+    // ====== تقييد العراق (Client-side) ======
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+    const lang = (navigator.language || "").toLowerCase();
+    const langs = (navigator.languages || []).map(x => (x||"").toLowerCase());
+
+    const isIraq =
+      tz.includes("Baghdad") ||
+      lang.includes("iq") ||
+      langs.some(l => l.includes("iq"));
+
+    const gateEl = document.getElementById("gate");
+    const appEl = document.getElementById("app");
+
+    if (!isIraq) {
+      appEl.style.display = "none";
+      gateEl.style.display = "block";
+      throw new Error("Offer restricted to Iraq only.");
+    }
+
+    // ====== صور الهدايا (SVG كصور) ======
+    // تقدر تعتبرها “صور” لأنها بتترسم داخل Canvas كـ Image.
+    const ICONS = {
+      iphone: svgData(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" viewBox="0 0 220 220">
+          <defs>
+            <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#0b0b0b"/>
+              <stop offset="1" stop-color="#2a2a2a"/>
+            </linearGradient>
+            <linearGradient id="scr" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#1b2cff"/>
+              <stop offset="1" stop-color="#8a2be2"/>
+            </linearGradient>
+          </defs>
+          <rect x="70" y="22" width="80" height="176" rx="18" fill="url(#g1)"/>
+          <rect x="78" y="38" width="64" height="140" rx="12" fill="url(#scr)" opacity=".95"/>
+          <circle cx="110" cy="182" r="7" fill="#111" stroke="#555" stroke-width="3"/>
+          <rect x="92" y="28" width="36" height="6" rx="3" fill="#444"/>
+          <circle cx="132" cy="44" r="6" fill="#111" stroke="#666" stroke-width="2"/>
+          <circle cx="132" cy="44" r="3" fill="#2aa7ff"/>
+          <path d="M95 110c18 10 28 10 46 0" stroke="#fff" stroke-opacity=".35" stroke-width="10" stroke-linecap="round"/>
+        </svg>
+      `),
+      samsung: svgData(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" viewBox="0 0 220 220">
+          <defs>
+            <linearGradient id="b" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#04102b"/>
+              <stop offset="1" stop-color="#0c3c9a"/>
+            </linearGradient>
+            <linearGradient id="s" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#00d4ff"/>
+              <stop offset="1" stop-color="#4b00ff"/>
+            </linearGradient>
+          </defs>
+          <rect x="68" y="18" width="84" height="184" rx="20" fill="url(#b)"/>
+          <rect x="78" y="36" width="64" height="148" rx="14" fill="url(#s)" opacity=".95"/>
+          <circle cx="110" cy="190" r="6" fill="#163b8f"/>
+          <circle cx="94" cy="30" r="5" fill="#163b8f"/>
+          <circle cx="110" cy="30" r="5" fill="#163b8f"/>
+          <circle cx="126" cy="30" r="5" fill="#163b8f"/>
+        </svg>
+      `),
+      airpods: svgData(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" viewBox="0 0 220 220">
+          <defs>
+            <linearGradient id="w" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#ffffff"/>
+              <stop offset="1" stop-color="#e9e9e9"/>
+            </linearGradient>
+          </defs>
+          <rect x="62" y="30" width="96" height="160" rx="26" fill="url(#w)" stroke="#d0d0d0" stroke-width="6"/>
+          <rect x="74" y="64" width="24" height="96" rx="12" fill="#fff" stroke="#d0d0d0" stroke-width="4"/>
+          <rect x="122" y="64" width="24" height="96" rx="12" fill="#fff" stroke="#d0d0d0" stroke-width="4"/>
+          <path d="M76 58h88" stroke="#d8d8d8" stroke-width="8" stroke-linecap="round"/>
+          <circle cx="86" cy="112" r="6" fill="#cfcfcf"/>
+          <circle cx="134" cy="112" r="6" fill="#cfcfcf"/>
+        </svg>
+      `),
+      giftcard: svgData(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" viewBox="0 0 220 220">
+          <defs>
+            <linearGradient id="gc" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#111111"/>
+              <stop offset="1" stop-color="#2b2b2b"/>
+            </linearGradient>
+          </defs>
+          <rect x="38" y="74" width="144" height="88" rx="16" fill="url(#gc)"/>
+          <rect x="38" y="74" width="144" height="28" rx="16" fill="#f3c33a"/>
+          <rect x="56" y="118" width="62" height="14" rx="7" fill="#3a3a3a"/>
+          <rect x="128" y="114" width="38" height="22" rx="10" fill="#f6e3b6"/>
+          <circle cx="110" cy="118" r="10" fill="#c3121a"/>
+          <path d="M103 118h14" stroke="#fff" stroke-opacity=".5" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+      `),
+      surprise: svgData(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" viewBox="0 0 220 220">
+          <rect x="60" y="80" width="100" height="110" rx="14" fill="#c3121a"/>
+          <rect x="60" y="80" width="100" height="26" rx="14" fill="#f3c33a"/>
+          <rect x="106" y="80" width="14" height="110" fill="#f3c33a"/>
+          <path d="M92 80c-14-16 6-30 20-12 14-18 34-4 20 12" fill="#f6e3b6"/>
+          <circle cx="110" cy="104" r="5" fill="#fff" opacity=".6"/>
+          <circle cx="92" cy="126" r="4" fill="#fff" opacity=".45"/>
+          <circle cx="134" cy="142" r="4" fill="#fff" opacity=".45"/>
+        </svg>
+      `),
+      tryagain: svgData(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" viewBox="0 0 220 220">
+          <circle cx="110" cy="110" r="74" fill="#111"/>
+          <circle cx="86" cy="96" r="10" fill="#f6e3b6"/>
+          <circle cx="134" cy="96" r="10" fill="#f6e3b6"/>
+          <path d="M80 148c12-12 48-12 60 0" stroke="#f6e3b6" stroke-width="12" stroke-linecap="round" fill="none"/>
+          <path d="M110 60a50 50 0 1 1-35 15" stroke="#f3c33a" stroke-width="10" fill="none" stroke-linecap="round"/>
+          <path d="M68 74l8 20 18-10" fill="#f3c33a"/>
+        </svg>
+      `),
+    };
+
+    function svgData(svg){
+      return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg.trim());
+    }
+
+    // ====== شرائح العجلة (صور فقط) ======
+    // تقدر تزود/تنقص الشرائح براحتك
     const prizes = [
-      { label: "iPhone", weight: 3 },
-      { label: "Samsung", weight: 4 },
-      { label: "AirPods", weight: 5 },
-      { label: "Gift Card", weight: 8 },
-      { label: "Gift Card", weight: 8 },
-      { label: "هديّة مفاجأة", weight: 10 },
-      { label: "حظ أوفر", weight: 40 },
-      { label: "حظ أوفر", weight: 40 },
-      { label: "حظ أوفر", weight: 40 },
-      { label: "هديّة مفاجأة", weight: 10 },
-      { label: "Gift Card", weight: 8 },
-      { label: "AirPods", weight: 5 }
+      { key:"iphone",   type:"win",  weight: 3 },
+      { key:"samsung",  type:"win",  weight: 4 },
+      { key:"airpods",  type:"win",  weight: 6 },
+      { key:"giftcard", type:"win",  weight: 12 },
+      { key:"surprise", type:"win",  weight: 10 },
+      { key:"tryagain", type:"lose", weight: 42 },
+      { key:"giftcard", type:"win",  weight: 12 },
+      { key:"tryagain", type:"lose", weight: 42 },
+      { key:"airpods",  type:"win",  weight: 6 },
+      { key:"tryagain", type:"lose", weight: 42 },
+      { key:"surprise", type:"win",  weight: 10 },
+      { key:"tryagain", type:"lose", weight: 42 },
     ];
 
-    // ألوان الشرائح (أحمر/كريمي مثل الصورة)
-    const sliceColors = prizes.map((_, i) => (i % 2 === 0 ? getComputedStyle(document.documentElement).getPropertyValue('--red').trim()
-                                                     : getComputedStyle(document.documentElement).getPropertyValue('--cream').trim()));
+    const sliceColors = prizes.map((_, i) => (i % 2 === 0 ? getCss('--red') : getCss('--cream')));
+    function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+    // preload icons
+    const iconImgs = {};
+    const iconKeys = Object.keys(ICONS);
+    let loadedCount = 0;
+
+    function preloadAll(){
+      return new Promise((resolve) => {
+        iconKeys.forEach(k=>{
+          const img = new Image();
+          img.onload = img.onerror = ()=>{
+            loadedCount++;
+            if (loadedCount === iconKeys.length) resolve();
+          };
+          img.src = ICONS[k];
+          iconImgs[k] = img;
+        });
+      });
+    }
 
     const canvas = document.getElementById("wheel");
     const ctx = canvas.getContext("2d");
@@ -271,7 +402,7 @@
     const cx = W/2, cy = H/2;
     const radius = Math.min(W,H)*0.44;
 
-    let currentAngle = -Math.PI/2; // start so pointer is at top
+    let currentAngle = -Math.PI/2;
     let spinning = false;
 
     function weightedPick(items){
@@ -287,7 +418,6 @@
     function drawWheel(angle){
       ctx.clearRect(0,0,W,H);
 
-      // outer ring (lights-ish)
       ctx.save();
       ctx.translate(cx, cy);
       ctx.rotate(angle);
@@ -312,16 +442,24 @@
         ctx.lineWidth = 6;
         ctx.stroke();
 
-        // text
-        ctx.save();
-        ctx.rotate(start + step/2);
-        ctx.textAlign = "right";
-        ctx.fillStyle = (sliceColors[i].toLowerCase() === "#c3121a") ? "#fff" : "#7a0e13";
-        ctx.font = "900 34px system-ui, -apple-system, Segoe UI, Roboto, Arial";
-        ctx.shadowColor = "rgba(0,0,0,.25)";
-        ctx.shadowBlur = 6;
-        ctx.fillText(prizes[i].label, radius - 26, 12);
-        ctx.restore();
+        // icon only
+        const mid = start + step/2;
+        const img = iconImgs[prizes[i].key];
+        if (img && img.complete){
+          ctx.save();
+          ctx.rotate(mid);
+
+          const size = 120;     // حجم الأيقونة
+          const dist = radius - 62; // مكانها داخل الشريحة
+          const x = dist - size;
+          const y = -size/2;
+
+          ctx.shadowColor = "rgba(0,0,0,.25)";
+          ctx.shadowBlur = 12;
+          ctx.drawImage(img, x, y, size, size);
+
+          ctx.restore();
+        }
       }
 
       // inner ring
@@ -357,71 +495,54 @@
     }
 
     function angleToIndex(globalAngle){
-      // pointer at top (=-PI/2 in our base). Convert to slice index
       const n = prizes.length;
       const step = (Math.PI*2)/n;
-
-      // globalAngle is wheel rotation (currentAngle). We want which slice is under pointer.
-      // When wheel rotates clockwise (angle increases), slice positions shift.
-      // Compute normalized angle for pointer reference.
       const a = ( (Math.PI*2) - (globalAngle % (Math.PI*2)) + (Math.PI/2) ) % (Math.PI*2);
-      const idx = Math.floor(a / step) % n;
-      return idx;
+      return Math.floor(a / step) % n;
     }
 
-    function showResult(prizeLabel){
-      modalTitle.textContent = prizeLabel === "حظ أوفر" ? "حظ أوفر 🙂" : "مبروك! 🎉";
-      if (prizeLabel === "حظ أوفر") {
-        modalText.textContent = "للأسف ما صار نصيبك هالمرة. تقدر تضغط متابعة وتشوف العرض المتاح.";
+    function showResult(item){
+      if (item.type === "lose") {
+        modalTitle.textContent = "حظ أوفر 🙂";
+        modalText.textContent = "للأسف ما صار نصيبك هالمرة.\nاضغط متابعة وشوف العرض المتاح.";
       } else {
-        modalText.textContent =
-          `مبروك! ربحت: ${prizeLabel}\n\nإذا تحب، اضغط "متابعة" للانتقال للعرض المتاح.`;
+        modalTitle.textContent = "مبروك! 🎉";
+        modalText.textContent = "مبروك! ربحت هدية 🎁\nاضغط متابعة للانتقال للعرض المتاح.";
       }
       modalBackdrop.style.display = "flex";
     }
 
     closeModal.addEventListener("click", ()=> modalBackdrop.style.display = "none");
     modalBackdrop.addEventListener("click", (e)=> { if(e.target === modalBackdrop) modalBackdrop.style.display="none"; });
+    goCpa.addEventListener("click", ()=> { window.location.href = CPA_URL; });
 
-    goCpa.addEventListener("click", ()=>{
-      // فتح في نفس التبويب لتقليل مشاكل iOS + تتبع أفضل
-      window.location.href = CPA_URL;
+    // init
+    preloadAll().then(()=>{
+      drawWheel(currentAngle);
     });
-
-    // initial draw
-    drawWheel(currentAngle);
 
     spinBtn.addEventListener("click", ()=>{
       if (spinning) return;
-
       spinning = true;
       spinBtn.disabled = true;
 
-      // اختيار النتيجة عشوائي حقيقي (وزني)
       const picked = weightedPick(prizes);
-      const targetIndex = prizes.findIndex(p => p.label === picked.label && p.weight === picked.weight);
-      // لو نفس اللابل موجود أكتر من مرة، نختار أقرب واحدة عشوائياً
-      const allSame = prizes.map((p,i)=>({p,i})).filter(x=>x.p.label===picked.label);
-      const chosenIndex = allSame[Math.floor(Math.random()*allSame.length)].i;
+
+      // لو نفس الأيقونة موجودة أكثر من مرة، اختار واحدة عشوائي
+      const candidates = prizes.map((p,i)=>({p,i})).filter(x=>x.p.key===picked.key && x.p.type===picked.type);
+      const chosenIndex = candidates[Math.floor(Math.random()*candidates.length)].i;
 
       const n = prizes.length;
       const step = (Math.PI*2)/n;
 
-      // نحدد زاوية النهاية بحيث مؤشر الأعلى يقع على الشريحة المختارة
-      // نحتاج نحسب زاوية تجعل index عند المؤشر = chosenIndex
-      // reverse of angleToIndex تقريبياً:
-      // a in [idx*step, (idx+1)*step) so pick middle
-      const targetA = (chosenIndex + 0.5) * step; // within 0..2pi
-      // We want: a = ((2pi - (angle mod 2pi) + pi/2) mod 2pi)
-      // Solve for angle: angle ≡ (2pi + pi/2 - a) (mod 2pi)
+      const targetA = (chosenIndex + 0.5) * step;
       let endAngleBase = (Math.PI*2 + Math.PI/2 - targetA) % (Math.PI*2);
 
-      // add multiple spins for animation
-      const spins = 7 + Math.random()*2; // 7-9 spins
+      const spins = 7 + Math.random()*2; // 7-9 لفات
       const endAngle = endAngleBase + spins*(Math.PI*2);
 
       const startAngle = currentAngle;
-      const duration = 3800; // ms
+      const duration = 3800;
       const start = performance.now();
 
       function easeOutCubic(t){ return 1 - Math.pow(1-t, 3); }
@@ -437,11 +558,8 @@
         } else {
           spinning = false;
           spinBtn.disabled = false;
-
-          // determine winner based on final angle
           const idx = angleToIndex(currentAngle);
-          const prize = prizes[idx];
-          showResult(prize.label);
+          showResult(prizes[idx]);
         }
       }
       requestAnimationFrame(anim);
